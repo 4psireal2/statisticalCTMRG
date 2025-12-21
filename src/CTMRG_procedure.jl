@@ -1,5 +1,5 @@
 function ctmrg(loc_arr, χ, Pattern_arr; maxiter = 400, ϵ = 1e-7 , Space_type = ℝ, Projector_type = :half,
-    svd_type = :envbond, conv_info = false, log_info = false, output_envs = true, adjust_χ = false,
+    svd_type = :envbond, conv_info = false, log_info = false, adjust_χ = false,
     trunc_check = true, reuse_envs = false, lognorm = 0, temp = false, ftol = false)
     """
     Params:
@@ -23,12 +23,13 @@ function ctmrg(loc_arr, χ, Pattern_arr; maxiter = 400, ϵ = 1e-7 , Space_type =
         
     end
 
-    
+
     sv_arr_old = 0
     sv_arr_old2 = 0
     f = 10
     f_old = 0
     number = 10
+    trunc_iters = zeros(Float64, maxiter)
     
     converging = true
     for i in 1:maxiter        
@@ -38,12 +39,13 @@ function ctmrg(loc_arr, χ, Pattern_arr; maxiter = 400, ϵ = 1e-7 , Space_type =
         
         if trunc_check
             trunc_arr, env_arr = CTMRG_step(env_arr, loc_arr, χ, Pattern_arr; Space_type = Space_type, Projector_type = Projector_type, svd_type = svd_type, trunc_check = true)
+            trunc_iters[i] = maximum(trunc_arr)
         else 
             env_arr = CTMRG_step(env_arr, loc_arr, χ, Pattern_arr; Space_type = Space_type, Projector_type = Projector_type, svd_type = svd_type)
         end
 
         # dynamically increase the bond dimension
-         if adjust_χ != false
+        if adjust_χ != false
             #trunc_sv_arr, env_arr = CTMRG_step(env_arr, loc_arr, χ, Pattern_arr; Space_type = Space_type, Projector_type = Projector_type, svd_type = svd_type, trunc_check = true)
 
             if maximum(trunc_arr) > adjust_χ[1] #if the largest SV cut during generation of the projectors is larger than the threshhold value increase chi
@@ -150,7 +152,9 @@ function ctmrg(loc_arr, χ, Pattern_arr; maxiter = 400, ϵ = 1e-7 , Space_type =
             
     end
      
-    if output_envs == true
+    if trunc_check == true
+        return f, trunc_iters, env_arr
+    else
         return f, env_arr
     end
 
@@ -188,7 +192,7 @@ function free_energy_ff_plaquette_dice(loc_arr, env_arr, pattern_arr, temp, logn
         @tensor begin contr2[] := env_arr[i].ul[v1,v2] * env_arr[l1].dl[v3,v1] * env_arr[l3].dr[v3,v4] * env_arr[l2].ur[v2,v4] end
 
         Z_xy = TensorKit.scalar(contr1) * TensorKit.scalar(contr2) / TensorKit.scalar(contr3) / TensorKit.scalar(contr4)
-        f_pre += log(Z_xy)
+        f_pre += log(Complex(Z_xy))
     end
     f = -1/β *  (f_pre + lognorm)
     return f

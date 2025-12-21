@@ -2,14 +2,19 @@ function CTMRG_step(env_arr, loc_arr, Bond_env, Pattern_arr; Space_type = ℝ, P
 
     #perfrom the CTMRG moves in all directions
     
-    if trunc_check == true
+    if trunc_check
         trunc_sv_arr = []
+        env_arr, trunc_sv_arr = multi_left_move(env_arr, loc_arr, Bond_env, Pattern_arr, Space_type = Space_type, Projector_type = Projector_type, svd_type = svd_type, trunc_sv_arr = trunc_sv_arr)
+
+        env_arr, trunc_sv_arr = multi_down_move(env_arr, loc_arr, Bond_env, Pattern_arr, Space_type = Space_type, Projector_type = Projector_type, svd_type = svd_type, trunc_sv_arr = trunc_sv_arr)
+
+        env_arr, trunc_sv_arr = multi_right_move(env_arr, loc_arr, Bond_env, Pattern_arr, Space_type = Space_type, Projector_type = Projector_type, svd_type = svd_type, trunc_sv_arr = trunc_sv_arr)
+
+        env_arr, trunc_sv_arr = multi_up_move(env_arr, loc_arr, Bond_env, Pattern_arr, Space_type = Space_type, Projector_type = Projector_type, svd_type = svd_type, trunc_sv_arr = trunc_sv_arr)    
+
+        return trunc_sv_arr, env_arr
     else
         trunc_sv_arr = false
-    end
-
-    if trunc_sv_arr == false
-
         env_arr = multi_left_move(env_arr, loc_arr, Bond_env, Pattern_arr, Space_type = Space_type, Projector_type = Projector_type, svd_type = svd_type, trunc_sv_arr = trunc_sv_arr)
 
         env_arr = multi_down_move(env_arr, loc_arr, Bond_env, Pattern_arr, Space_type = Space_type, Projector_type = Projector_type, svd_type = svd_type, trunc_sv_arr = trunc_sv_arr)
@@ -17,23 +22,6 @@ function CTMRG_step(env_arr, loc_arr, Bond_env, Pattern_arr; Space_type = ℝ, P
         env_arr = multi_right_move(env_arr, loc_arr, Bond_env, Pattern_arr, Space_type = Space_type, Projector_type = Projector_type, svd_type = svd_type, trunc_sv_arr = trunc_sv_arr)
 
         env_arr = multi_up_move(env_arr, loc_arr, Bond_env, Pattern_arr, Space_type = Space_type, Projector_type = Projector_type, svd_type = svd_type, trunc_sv_arr = trunc_sv_arr)
-
-    else
-        
-        env_arr, trunc_sv_arr = multi_left_move(env_arr, loc_arr, Bond_env, Pattern_arr, Space_type = Space_type, Projector_type = Projector_type, svd_type = svd_type, trunc_sv_arr = trunc_sv_arr)
-
-        env_arr, trunc_sv_arr = multi_down_move(env_arr, loc_arr, Bond_env, Pattern_arr, Space_type = Space_type, Projector_type = Projector_type, svd_type = svd_type, trunc_sv_arr = trunc_sv_arr)
-
-        env_arr, trunc_sv_arr = multi_right_move(env_arr, loc_arr, Bond_env, Pattern_arr, Space_type = Space_type, Projector_type = Projector_type, svd_type = svd_type, trunc_sv_arr = trunc_sv_arr)
-
-        env_arr, trunc_sv_arr = multi_up_move(env_arr, loc_arr, Bond_env, Pattern_arr, Space_type = Space_type, Projector_type = Projector_type, svd_type = svd_type, trunc_sv_arr = trunc_sv_arr)
-        
-    end
-
-    
-    if trunc_check == true
-        return trunc_sv_arr, env_arr
-    else
         return env_arr
     end
 end

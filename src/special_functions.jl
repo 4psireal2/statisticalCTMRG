@@ -183,6 +183,41 @@ function _elementwise_mult(a::AbstractTensorMap,b::AbstractTensorMap)
 end
 
 
+function truncate_sector_by_error(aTensor::TensorMap, atol::Real)
+    I = sectortype(aTensor)
+    T = eltype(aTensor)
+
+    # Dictionaries to hold matrix data for each sector
+    U_data = Dict{I, Matrix{T}}()
+    S_data = Dict{I, Matrix{T}}()
+    V_data = Dict{I, Matrix{T}}()
+    
+    new_dims = Dict{I, Int}()
+    #ϵ_total = 0.0
+
+    for (c, b) in blocks(aTensor)
+        U, S, V_T, ϵ = svd_trunc(b, trunc=truncerror(; atol = atol))
+        
+        U_data[c] = U
+        S_data[c] = S
+        V_data[c] = V_T
+        
+        new_dims[c] = size(S, 1)
+    #    ϵ_total += ϵ^2
+    end
+
+    SpaceType = typeof(space(aTensor, 1))
+    V_virt = SpaceType(new_dims...)
+    
+    U_trunc = TensorMap(U_data, codomain(aTensor), V_virt)    
+    S_trunc = TensorMap(S_data, V_virt, V_virt)
+    V_trunc = TensorMap(V_data, V_virt, domain(aTensor))
+
+    #return U_trunc, S_trunc, V_trunc, ϵ_total
+    return U_trunc, S_trunc, V_trunc
+end
+
+
 function wrapper_tsvd(A, Bond_env; Space_type = ℝ, svd_type = :GKL)
 
     if svd_type == :accuracy
@@ -190,9 +225,15 @@ function wrapper_tsvd(A, Bond_env; Space_type = ℝ, svd_type = :GKL)
 
     elseif svd_type == :envbond
         U, S, Vd = svd_trunc(A, trunc = truncrank(Bond_env))
+
+    elseif svd_type == :trial1
+        V_trunc = ℤ₂Space(0 => Bond_env, 1 => Bond_env)
+        U, S, Vd = svd_trunc(A,  trunc=truncerror(; atol = 1e-10) & truncspace(V_trunc))
+    
+    elseif svd_type == :trial2
+        U, S, Vd = truncate_sector_by_error(A, 1.0e-10)
     
     elseif svd_type == :GKL
-
         U, S, Vd = tsvd_GKL(A, χ = Bond_env, space_type = Space_type)
             
     else
@@ -333,7 +374,8 @@ function initialize_multisite(loc; Space_type=ℝ, initialize_seed = 1236, initi
     elseif Space_type == :U1
         trivialspace = ProductSpace{GradedSpace{U1Irrep, TensorKit.SortedVectorDict{U1Irrep, Int64}}, 0}()
     elseif Space_type == :Z2
-        trivialspace = one(ℤ₂Space(0 => 1))
+        #trivialspace = one(ℤ₂Space(0 => 1))
+        trivialspace = one(ℤ₂Space(0 => 1, 1 => 1))
     elseif Space_type == :vZ2
         trivialspace = ProductSpace{GradedSpace{Z2Irrep, Tuple{Int64, Int64}}, 0}()
     elseif Space_type == :O2_int
@@ -391,8 +433,8 @@ function initialize_multisite(loc; Space_type=ℝ, initialize_seed = 1236, initi
         
     elseif Space_type == :Z2 || Space_type == :vZ2
         
-        V = ℤ₂Space(0 => 1)
-        # V = ℤ₂Space(0 => 1, 1 => 1)
+        #V = ℤ₂Space(0 => 1)
+        V = ℤ₂Space(0 => 1, 1 => 1)
         C_ul = ones(V ← V)
         C_dr = ones(V ← V)
         C_dl = ones(trivialspace ← V ⊗ V)
@@ -457,8 +499,8 @@ function initialize_multisite(loc; Space_type=ℝ, initialize_seed = 1236, initi
             
         elseif Space_type == :Z2 || Space_type == :vZ2
             
-            V = ℤ₂Space(0 => 1)
-            # V = ℤ₂Space(0 => 1, 1 => 1)
+            #V = ℤ₂Space(0 => 1)
+            V = ℤ₂Space(0 => 1, 1 => 1)
             
             # Tr_l = TensorMap(randn, V ← (space_loc_l)' ⊗ space_loc_l ⊗ V)
             # Tr_d = TensorMap(randn, V ← V ⊗ (space_loc_d)' ⊗ space_loc_d)

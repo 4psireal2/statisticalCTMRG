@@ -29,7 +29,7 @@ function ctmrg(loc_arr, χ, Pattern_arr; maxiter = 400, ϵ = 1e-7 , Space_type =
     f = 10
     f_old = 0
     number = 10
-    trunc_iters = zeros(Float64, maxiter)
+    trunc_iters = []
     
     converging = true
     for i in 1:maxiter        
@@ -39,7 +39,7 @@ function ctmrg(loc_arr, χ, Pattern_arr; maxiter = 400, ϵ = 1e-7 , Space_type =
         
         if trunc_check
             trunc_arr, env_arr = CTMRG_step(env_arr, loc_arr, χ, Pattern_arr; Space_type = Space_type, Projector_type = Projector_type, svd_type = svd_type, trunc_check = true)
-            trunc_iters[i] = maximum(trunc_arr)
+            push!(trunc_iters, maximum(trunc_arr))
         else 
             env_arr = CTMRG_step(env_arr, loc_arr, χ, Pattern_arr; Space_type = Space_type, Projector_type = Projector_type, svd_type = svd_type)
         end
